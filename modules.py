@@ -37,3 +37,59 @@ async def caserand(case):
         print(item)
         resp = item
         return resp
+
+
+async def getinfo(token):
+    db = await aiosqlite.connect('base.sqlite')
+    c = await db.execute("SELECT shop_id, shop_name, shop_url FROM `shops` WHERE token LIKE ?", [token])
+    r = await c.fetchall()
+    if r == []:
+        resp = "Wrong Token!"
+        return resp
+    else:
+        r = str(r)
+        r = r.replace("[(", "")
+        r = r.replace(")]", "")
+        r = r.replace(", ", ":")
+        resp = r.replace("'", "")
+        return resp
+
+
+async def chktoken(token):
+    db = await aiosqlite.connect('base.sqlite')
+    c = await db.execute("SELECT shop_name FROM `shops` WHERE token LIKE ?", [token])
+    r = await c.fetchall()
+    if r == []:
+        resp = "Wrong Token!"
+        return resp
+    else:
+        resp = r
+        return resp
+
+
+async def addcasemodule(data):
+    item = data.split(':')[-3]
+    weight = data.split(':')[-2]
+    case = data.split(':')[-1]
+    db = await aiosqlite.connect('base.sqlite')
+    c = await db.execute("SELECT case_name FROM `cases` WHERE case_name LIKE ?", [case])
+    r = await c.fetchall()
+    if r == []:
+        resp = data + ":New Case"
+        await db.execute("INSERT INTO cases VALUES(?,?,?)", (item, weight, case))
+        await db.commit()
+        return resp
+    else:
+        print(r)
+        r = str(r)
+        r = r.replace("[('", "")
+        r = r.replace("'", "")
+        r = r.replace(",)]", "")
+        if r == case:
+            resp = "Case exists!"
+            return resp
+        else:
+            await db.execute("INSERT INTO cases VALUES(?,?,?)", (item, weight, case))
+            await db.commit()
+            resp = data
+            return resp
